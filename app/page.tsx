@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Home() {
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center px-4">
@@ -23,12 +25,13 @@ export default function Home() {
             <p className="text-xs text-slate-300 mb-4">
               Practice real-time role-plays with an AI prospect and get instant coaching on your pitch.
             </p>
-            <button
+            <Link
+              href="/coach"
               className="inline-flex items-center rounded-full border border-sky-500/60 bg-sky-500/10 px-3 py-1.5 text-xs font-medium text-sky-100 hover:bg-sky-500/20 hover:border-sky-400 transition"
             >
               Open prototype
               <span className="ml-1 text-[10px]">↗</span>
-            </button>
+            </Link>
           </div>
 
           {/* Info / description card */}
