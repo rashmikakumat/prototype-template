@@ -1,6 +1,48 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 
+type Evaluation = {
+  score: number;
+  strengths: string[];
+  improvements: string[];
+};
+
 export default function CoachPage() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [evaluation, setEvaluation] = useState<Evaluation | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSimulateSession() {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // In future: send real transcript.
+      const res = await fetch("/api/evaluate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          transcript:
+            "Demo conversation transcript between advisor and prospect.",
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to get evaluation");
+      }
+
+      const data = (await res.json()) as Evaluation;
+      setEvaluation(data);
+    } catch (err) {
+      console.error(err);
+      setError("Something went wrong while generating feedback.");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       {/* Top bar */}
@@ -78,49 +120,87 @@ export default function CoachPage() {
               </div>
             </div>
 
-            {/* Start button (placeholder for now) */}
+            {/* Start / simulate button */}
             <div className="pt-2">
               <button
+                onClick={handleSimulateSession}
                 className="inline-flex items-center rounded-full bg-sky-500 px-4 py-2 text-xs md:text-sm font-medium text-slate-950 hover:bg-sky-400 transition disabled:opacity-60 disabled:cursor-not-allowed"
-                disabled
+                disabled={isLoading}
               >
-                Start practice (coming next)
+                {isLoading ? "Generating feedback..." : "Simulate session & get feedback"}
               </button>
+              <p className="mt-2 text-[11px] text-slate-500">
+                For now this uses a demo evaluation. Next, we&apos;ll plug this
+                into the actual call transcript and Gemini.
+              </p>
             </div>
+
+            {error && (
+              <p className="mt-2 text-[11px] text-red-400">{error}</p>
+            )}
           </div>
 
-          {/* Right: Evaluation + guidance placeholder */}
+          {/* Right: Evaluation + guidance */}
           <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 md:p-5 flex flex-col gap-3 text-xs text-slate-300">
             <p className="text-[11px] uppercase tracking-[0.16em] text-slate-400">
-              Post-call evaluation (preview)
+              Post-call evaluation
             </p>
 
-            <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-3 space-y-2">
-              <p className="text-[11px] text-slate-400">
-                After each role-play, the coach will generate:
-              </p>
-              <ul className="list-disc list-inside space-y-1">
-                <li>Overall score for the conversation.</li>
-                <li>Top 2–3 strengths in your pitch.</li>
-                <li>Top 2–3 improvements with concrete tips.</li>
-              </ul>
-            </div>
+            {evaluation ? (
+              <>
+                <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-3 space-y-2">
+                  <div className="flex items-baseline justify-between">
+                    <p className="text-[11px] text-slate-400">Overall score</p>
+                    <p className="text-2xl font-semibold text-sky-300">
+                      {evaluation.score}
+                      <span className="text-xs text-slate-400 ml-1">/ 100</span>
+                    </p>
+                  </div>
+                  <p className="text-[11px] text-slate-500">
+                    This is a simulated score. Later it will be based on real
+                    conversation signals.
+                  </p>
+                </div>
 
-            <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-3 space-y-1">
-              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-400">
-                Follow-up practice
-              </p>
-              <p>
-                You’ll also get a short follow-up drill (2–3 min) focused only
-                on your improvement areas, so you can immediately apply the
-                feedback.
-              </p>
-            </div>
+                <div className="rounded-xl border border-emerald-900/60 bg-emerald-950/40 p-3 space-y-1">
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-emerald-300">
+                    Strengths
+                  </p>
+                  <ul className="list-disc list-inside space-y-1">
+                    {evaluation.strengths.map((s, idx) => (
+                      <li key={idx}>{s}</li>
+                    ))}
+                  </ul>
+                </div>
 
-            <p className="text-[11px] text-slate-500 mt-1">
-              This screen is the skeleton. Next, we’ll plug in real-time audio
-              and Gemini evaluation.
-            </p>
+                <div className="rounded-xl border border-amber-900/60 bg-amber-950/30 p-3 space-y-1">
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-amber-300">
+                    Improvements
+                  </p>
+                  <ul className="list-disc list-inside space-y-1">
+                    {evaluation.improvements.map((i, idx) => (
+                      <li key={idx}>{i}</li>
+                    ))}
+                  </ul>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-3 space-y-2">
+                  <p className="text-[11px] text-slate-400">
+                    Click{" "}
+                    <span className="text-sky-300">
+                      “Simulate session &amp; get feedback”
+                    </span>{" "}
+                    to see how the coach will summarise a role-play.
+                  </p>
+                  <p className="text-[11px] text-slate-500">
+                    In the real version, this panel will use your actual
+                    conversation transcript to generate personalised insights.
+                  </p>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </section>
